@@ -9,7 +9,12 @@
         }
     };
 
-    function TranslationApp(options) {
+    /**
+     *
+     * @param options
+     * @constructor
+     */
+    function MSTranslatorApp(options) {
 
         this.OPTION_TEMPLATE = '<option id="{{id}}">{{value}}</option>';
 
@@ -59,7 +64,7 @@
 
         this.targetLanguageSelect.on("change", $.proxy(this.handleTargetLanguageChange, this));
         this.sourceLanguageSelect.on("change", $.proxy(this.handleSourceLanguageChange, this));
-        this.textInput.on("keyup", $.proxy(this.handleTextChange, this));
+        this.textInput.on("keyup", $.proxy(this.handleTextInputKeyUp, this));
         this.translateBtn.on("click", function (e) {
             e.preventDefault();
             this.translate(this.handleTranslation);
@@ -67,55 +72,55 @@
     }
 
     /**
-     *
-     * @param that
+     * Enables or disables translate button.
+     * @param that Reference to the current object.
      */
-    TranslationApp.prototype.enableOrDisableTranslation = function (that) {
+    MSTranslatorApp.prototype.enableOrDisableTranslateBtn = function (that) {
         that.translateBtn.prop("disabled", !that.State.canTranslate());
     };
 
     /**
-     *
-     * @param e
+     * Handles text input change event.
+     * @param e Event.
      */
-    TranslationApp.prototype.handleTextChange = function (e) {
+    MSTranslatorApp.prototype.handleTextInputKeyUp = function (e) {
         this.State.textToTranslate = e.target.value;
-        this.enableOrDisableTranslation(this);
+        this.enableOrDisableTranslateBtn(this);
     };
 
     /**
-     *
+     * Handles target language select change event.
      * @param e
      */
-    TranslationApp.prototype.handleTargetLanguageChange = function (e) {
+    MSTranslatorApp.prototype.handleTargetLanguageChange = function (e) {
         var selectedItem = $(e.target);
         this.State.targetLanguage = selectedItem.val();
-        this.enableOrDisableTranslation(this);
+        this.enableOrDisableTranslateBtn(this);
     };
 
     /**
-     *
+     * Handles source language select change event.
      * @param e
      */
-    TranslationApp.prototype.handleSourceLanguageChange = function (e) {
+    MSTranslatorApp.prototype.handleSourceLanguageChange = function (e) {
         var selectedItem = $(e.target);
         this.State.sourceLanguage = selectedItem.val();
-        this.enableOrDisableTranslation(this);
+        this.enableOrDisableTranslateBtn(this);
     };
 
     /**
-     *
-     * @param token
+     * Stores authentication token in an instance variable.
+     * @param token Token.
      */
-    TranslationApp.prototype.setAuthToken = function (token) {
+    MSTranslatorApp.prototype.setAuthToken = function (token) {
         this.State.authToken = "Bearer " + token;
     };
 
     /**
-     *
-     * @param callback
+     * Retrieves authentication token from Azure cloud and executed a callback function.
+     * @param callback Callback function.
      */
-    TranslationApp.prototype.getToken = function (callback) {
+    MSTranslatorApp.prototype.getToken = function (callback) {
         this.sendRequest(this.Defaults.tokenResource, "POST", this.Defaults.azureTokenHeader, function (data) {
             this.setAuthToken(data);
             callback();
@@ -123,51 +128,44 @@
     };
 
     /**
-     *
-     * @param callback
+     * Retrieves available languages codes and executes a callback function to bind the results to the UI.
+     * @param callback Callback function to bind the results set to the UI.
      */
-    TranslationApp.prototype.getLanguages = function (callback) {
+    MSTranslatorApp.prototype.getAvailableLanguageCodes = function (callback) {
         var url = this.Defaults.languagesResource.replace("{{token}}", this.State.authToken);
         this.sendJsonpRequest(url, callback);
     };
 
     /**
-     *
-     * @param text
-     * @returns {boolean}
+     * Retrieves value from local storage.
+     * @param key Key.
      */
-    TranslationApp.prototype.isCached = function (text) {
-        return localStorage.getItem(text) !== null;
-    };
-
-    /**
-     *
-     * @param key
-     */
-    TranslationApp.prototype.getFromCache = function (key) {
+    MSTranslatorApp.prototype.getFromCache = function (key) {
         console.log("Get from cache: text: " + key + " Hash code: " + Utils.hashCode(key));
         return localStorage.getItem(Utils.hashCode(key));
     };
 
     /**
-     *
-     * @param key
-     * @param value
+     * Stores value in a local storage.
+     * @param key Key.
+     * @param value Value.
      */
-    TranslationApp.prototype.cache = function (key, value) {
+    MSTranslatorApp.prototype.cache = function (key, value) {
         console.log("Cache: Hash code: text: " + key + " Hash code:" + Utils.hashCode(key));
         localStorage.setItem(Utils.hashCode(key), value);
     };
 
     /**
-     *
-     * @param callback
+     * Translates text and executes a callback function if the translate request is successful. The function
+     * tries to retrieve content from local storage first and only then issues a call to the
+     * MS Translator API.
+     * @param callback Callback function.
      */
-    TranslationApp.prototype.translate = function (callback) {
+    MSTranslatorApp.prototype.translate = function (callback) {
         var text = this.getFromCache(this.State.getCacheKey());
 
         if (text !== null) {
-            this.displayTranslation(text);
+            this.displayTranslatedText(text);
             return;
         }
 
@@ -184,7 +182,7 @@
      *
      * @param text
      */
-    TranslationApp.prototype.displayTranslation = function (text) {
+    MSTranslatorApp.prototype.displayTranslatedText = function (text) {
         this.translatedTextDiv.text(text);
     };
 
@@ -192,29 +190,29 @@
      *
      * @param data
      */
-    TranslationApp.prototype.handleTranslation = function (data) {
+    MSTranslatorApp.prototype.handleTranslation = function (data) {
         this.cache(this.State.getCacheKey(), data);
-        this.displayTranslation(data);
+        this.displayTranslatedText(data);
     };
 
 
     /**
-     *
+     * Initializes the application.
      */
-    TranslationApp.prototype.init = function () {
+    MSTranslatorApp.prototype.init = function () {
         this.getToken(function () {
-            this.getLanguages(function (data) {
+            this.getAvailableLanguageCodes(function (data) {
                 this.bindLanguages(data);
             }.bind(this));
         }.bind(this));
     };
 
     /**
-     *
-     * @param url
-     * @param callback
+     * Sends a JSONP request.
+     * @param url Request URL.
+     * @param callback Callback function.
      */
-    TranslationApp.prototype.sendJsonpRequest = function (url, callback) {
+    MSTranslatorApp.prototype.sendJsonpRequest = function (url, callback) {
         var that = this;
 
         window.processJsonp = function (data) {
@@ -235,13 +233,13 @@
     };
 
     /**
-     *
-     * @param url
-     * @param type
-     * @param headers
-     * @param callback
+     * Sends a standard AJAX request.
+     * @param url URL.
+     * @param type Request method.
+     * @param headers Headers.
+     * @param callback Callback function.
      */
-    TranslationApp.prototype.sendRequest = function (url, type, headers, callback) {
+    MSTranslatorApp.prototype.sendRequest = function (url, type, headers, callback) {
         var that = this;
 
         this.LoadingCanvas.show();
@@ -270,13 +268,13 @@
     };
 
     /**
-     *
-     * @param data
+     * Binds languages retrieved from MS Translator API to the UI.
+     * @param languages Languages.
      */
-    TranslationApp.prototype.bindLanguages = function (data) {
+    MSTranslatorApp.prototype.bindLanguages = function (languages) {
         var that = this;
 
-        $.each(data.sort(), function () {
+        $.each(languages.sort(), function () {
             var template = that.OPTION_TEMPLATE.replace("{{id}}", this).replace("{{value}}", this);
             that.targetLanguageSelect.append(template);
             that.sourceLanguageSelect.append(template);
@@ -285,7 +283,7 @@
     };
 
     $(document).ready(function () {
-        var ts = new TranslationApp().init();
+        var ts = new MSTranslatorApp().init();
     });
 
 })(jQuery);
