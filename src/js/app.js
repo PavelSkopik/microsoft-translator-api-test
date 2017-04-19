@@ -39,15 +39,7 @@
         this.translateBtn = this.$element.find("#translate-btn");
         this.translatedTextDiv = this.$element.find("#translated-text");
         this.errorPanel = this.$element.find("#error-panel");
-
-        this.LoadingCanvas = {
-            show: function () {
-                $("#loading-canvas").show();
-            },
-            hide: function () {
-                $("#loading-canvas").hide();
-            }
-        };
+        this.loadingCanvas =  $("#loading-canvas");
 
         this.State = {
             textToTranslate: "",
@@ -228,14 +220,14 @@
         });
 
         req.done(function () {
-            that.LoadingCanvas.hide();
+            that.loadingCanvas.hide();
         });
     };
 
     MSTranslatorApp.prototype.showError = function (message) {
         this.errorPanel.text(message);
         this.errorPanel.show();
-        this.LoadingCanvas.hide();
+        this.loadingCanvas.hide();
     };
 
     /**
@@ -248,7 +240,7 @@
     MSTranslatorApp.prototype.sendRequest = function (url, type, headers, callback) {
         var that = this;
 
-        this.LoadingCanvas.show();
+        this.loadingCanvas.show();
 
         var getHeaders = function (headers) {
             return headers === null ? {} : headers;
@@ -263,7 +255,7 @@
 
         request.done(function (data) {
             callback(data);
-            that.LoadingCanvas.hide();
+            that.loadingCanvas.hide();
         });
 
         request.fail(function (jqXHR) {
