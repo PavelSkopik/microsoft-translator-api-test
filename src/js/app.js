@@ -27,11 +27,10 @@
             translateResource: "https://api.microsofttranslator.com/V2/Ajax.svc/Translate?appId={{token}}&text={{text}}&from={{from}}&to={{to}}&oncomplete=processJsonp",
             defaultLanguage: "en",
             appElement: "#translation-app",
-            languagesElement: "",
-            translateBtn: ""
+            minTextLength: 2
         };
 
-        this.options = $.extend({}, this.Defaults, options);
+        this.Defaults = $.extend({}, this.Defaults, options);
 
         this.$element = $(this.Defaults.appElement);
         this.targetLanguageSelect = this.$element.find("#target-language");
@@ -39,6 +38,7 @@
         this.textInput = this.$element.find("#text-to-translate");
         this.translateBtn = this.$element.find("#translate-btn");
         this.translatedTextDiv = this.$element.find("#translated-text");
+        this.errorPanel = this.$element.find("#error-panel");
 
         this.LoadingCanvas = {
             show: function () {
@@ -54,8 +54,8 @@
             targetLanguage: "",
             sourceLanguage: "",
             authToken: "Bearer ",
-            canTranslate: function () {
-                return this.textToTranslate !== "" && this.textToTranslate.length > 4 && this.targetLanguage !== "" && this.sourceLanguage !== "";
+            canTranslate: function (defaults) {
+                return this.textToTranslate !== "" && this.textToTranslate.length >= defaults.minTextLength && this.targetLanguage !== "" && this.sourceLanguage !== "";
             },
             getCacheKey: function () {
                 return this.textToTranslate + "-" + this.targetLanguage;
@@ -76,7 +76,7 @@
      * @param that Reference to the current object.
      */
     MSTranslatorApp.prototype.enableOrDisableTranslateBtn = function (that) {
-        that.translateBtn.prop("disabled", !that.State.canTranslate());
+        that.translateBtn.prop("disabled", !that.State.canTranslate(that.Defaults));
     };
 
     /**
@@ -232,6 +232,12 @@
         });
     };
 
+    MSTranslatorApp.prototype.showError = function (message) {
+        this.errorPanel.text(message);
+        this.errorPanel.show();
+        this.LoadingCanvas.hide();
+    };
+
     /**
      * Sends a standard AJAX request.
      * @param url URL.
@@ -261,9 +267,13 @@
         });
 
         request.fail(function (jqXHR) {
-            var responseText = JSON.parse(jqXHR.responseText);
-            console.error(responseText.statusCode + ": " + responseText.message);
-            that.LoadingCanvas.hide();
+            if (jqXHR.responseText !== "") {
+                var responseText = JSON.parse(jqXHR.responseText);
+                console.error(responseText.statusCode + ": " + responseText.message);
+                that.showError("Could not execute request. " + responseText.statusCode + ": " + responseText.message);
+            } else {
+                that.showError("Unexpected error occurred. Could not execute request.");
+            }
         });
     };
 

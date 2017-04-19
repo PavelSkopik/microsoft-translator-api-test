@@ -295,6 +295,14 @@ textarea {
     display: block;
 }
 
+.form {
+    margin-bottom: 30px;
+}
+
+#translated-text {
+    height: 181px;
+}
+
 @keyframes spin {
     from {
         transform: scale(1) rotate(0deg);
@@ -312,3 +320,4 @@ textarea {
         -webkit-transform: rotate(360deg);
     }
 }
+
