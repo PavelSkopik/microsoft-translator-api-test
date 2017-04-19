@@ -12,6 +12,8 @@ This is a minimal implementation that includes the following:
 * Translated text is cached in local storage. When translation is 
   triggered, the application tries to retrieve content from the local 
   storage first before sending a request to the translator API. 
+  
+Currently token is reissued with every translation request. Normally it should be reissued after it expires which is 10 minutes. May by implemented later.
 
 ## Building the Application
 
